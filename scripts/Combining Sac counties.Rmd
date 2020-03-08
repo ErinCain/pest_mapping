@@ -1,0 +1,87 @@
+---
+title: "joining of counties"
+author: "Erin Cain"
+date: "2/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(sp)
+library(readtext)
+library(tidyverse)
+library(dplyr)
+library(tidyverse)
+library(readr)
+
+
+#setwd("~/ErinCain/pest_mapping/mapping_practice")
+```
+
+
+```{r}
+counties <- c("udc17_04", "udc17_45", "udc17_52", "udc17_11", "udc17_32", "udc17_58", "udc17_51", "udc17_17", "udc17_57")
+
+create_dataframe <- function(file_1, file_2) {
+  pest_data <- read_csv(file = file_1)
+  pest_data <- pest_data %>% 
+    select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
+           township, tship_dir, range, range_dir, section) %>% 
+    na.omit()
+
+  #pest_data$county_cd <- sprintf("%02d", as.numeric(pest_data$county_cd))
+  #pest_data$township <- sprintf("%02d", as.numeric(pest_data$township))
+  #pest_data$range <- sprintf("%02d", as.numeric(pest_data$range))
+
+
+  pest_data$CO_MTR = paste(pest_data$county_cd, pest_data$base_ln_mer,
+                                  pest_data$township, pest_data$tship_dir,
+                                  pest_data$range, pest_data$range_dir, sep="")
+
+  pest_data %>% 
+    select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR) 
+  #file_2 <- paste0("./", file_2)
+  print(file_2)
+
+  twnships <- st_read(file = file_2)
+  s.sf <- twnships
+  par(mar=c(0,0,0,0))
+  
+  merged <- full_join(alameda_twnships, date_applications, by='CO_MTR')
+  s.sf <- merged
+  
+}
+create_dataframe('pur2017/udc17_04.txt', "Butte_townships/mtr_04 _nad83.shp")
+```
+
+```{r}
+shapes_list <-c('data/pest_data/Archive/udc17_04.txt', 'data/pest_data/Archive/udc17_11.txt',
+                'data/pest_data/Archive/udc17_17.txt', 'data/pest_data/Archive/udc17_32.txt',
+                'data/pest_data/Archive/udc17_45.txt', 'data/pest_data/Archive/udc17_51.txt',
+                'data/pest_data/Archive/udc17_52.txt','data/pest_data/Archive/udc17_57.txt',
+                'data/pest_data/Archive/udc17_58.txt')
+
+pest_list <-c('data/shape_files/Butte_townships/mtr_04_nad83.shp', 'data/shape_files/Glenn_townships/mtr_11_nad83.shp',
+              'data/shape_files/Lake_townships/mtr_17_nad83.shp', 'data/shape_files/Sacramento_townships/mtr_32_nad83.shp',
+              'data/shape_files/Shasta_townships/mtr_45_nad83.shp','data/shape_files/Sutter_townships/mtr_51_nad83.shp',
+              'data/shape_files/Tehama_townships/mtr_52_nad83.shp','data/shape_files/Yolo_townships/mtr_57_nad83.shp',
+              'data/shape_files/Yuba_townships/mtr_58_nad83.shp')
+
+
+mapply(create_dataframe, shapes_list, pest_list)
+```
+
+
+```{r}
+read_csv("pur2017/udc17_04.txt")
+
+butte_twn <- st_read("Butte_townships/mtr_04 _nad83.shp")
+```
+
+
+
+
+
+
+

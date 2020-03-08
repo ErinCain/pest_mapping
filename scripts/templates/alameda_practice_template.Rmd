@@ -1,0 +1,148 @@
+---
+title: "TEMPLATE FOR COUNT"
+author: "Erin Cain"
+date: "01/21/2020"
+output:
+  html_document: default
+  pdf_document: default
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(sp)
+library(ggplot2)
+library(tmap)
+library(tmaptools)
+library(readtext)
+library(tidyverse)
+library(dplyr)
+library(rgdal)
+library(data.table)
+library(magrittr)
+```
+
+```{r}
+library(readr)
+setwd("~/Documents/pest_mapping/mapping_practice")
+udc17_01 <- read_csv("data/pest_data/udc17_01.txt")
+View(udc17_01)
+```
+
+```{r}
+date_applications <-udc17_01
+date_applications <- date_applications[1:4]
+date_applications
+```
+```{r}
+date_applications <- date_applications %>% select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer, township, tship_dir, range, range_dir,section) %>% na.omit()
+
+#date_applications$county_cd <- sprintf("%02d", as.numeric(date_applications$county_cd))
+#date_applications$township <- sprintf("%02d", as.numeric(date_applications$township))
+#date_applications$range <- sprintf("%02d", as.numeric(date_applications$range))
+
+#date_applications$CO_MTR = paste(date_applications$county_cd,date_applications$base_ln_mer,
+#                                  date_applications$township, date_applications$tship_dir,
+#                                  date_applications$range, date_applications$range_dir,
+#                                  date_applications$section, sep="")
+
+#date_applications$CO_MTR = paste(date_applications$county_cd, date_applications$base_ln_mer,
+#                                  date_applications$township, date_applications$tship_dir,
+#                                 date_applications$range, date_applications$range_dir, sep="")
+#date_applications$CO_MTR <- as.numeric(date_applications$CO_MTR)
+
+#date_applications %>% 
+#  select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR)
+```
+```{r}
+library(tidyverse)
+library(dplyr)
+
+alameda_twnships <- st_read("/Users/ErinCain/Downloads/Alameda_townships/mtr_01_nad83.shp")
+s.sf <- alameda_twnships
+par(mar=c(0,0,0,0))
+#plot(alameda_twnships, col="#f2f2f2", bg="skyblue", lwd=0.25, border=0, max.plot = 13)
+
+#head(alameda_twnships, 5)
+#alameda_twnships <- as.data.frame.matrix(alameda_twnships)
+#alameda_twnships$CO_MTR <- as.numeric(alameda_twnships$CO_MTR[[1]])
+#alameda_twnships$geometry <- as.numeric(alameda_twnships$CO_MTR[[2]])
+
+merged_alameda <- full_join(alameda_twnships, date_applications, by='CO_MTR')
+merged_alameda
+
+s.sf <- merged_alameda
+
+#knitr::kable(head(merged_alameda, 5), align = 'c')
+```
+
+
+```{r}
+##ggplot() + geom_map(data = date_applications, aes(map_id = alameda_twnships, fill = HectareLocal), 
+##                    map =alameda_twnships) +
+##  expand_limits(x = bangladesh$long, y = bangladesh$lat) + 
+##  coord_fixed(.96) +
+##  scale_fill_gradient(low="thistle2", high="darkred", 
+##                      guide="colorbar", na.value="white") +
+##  labs(title = "Bangladesh Boro Rice (Local variety), 2016", x = element_blank(), y = element_blank(), 
+##       fill='Hectares') +   theme(legend.position = "bottom") 
+```
+
+```{r}
+
+library(leaflet)
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
+alameda_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
+
+alameda_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+  
+  
+leaflet(alameda_projected) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addPolygons(stroke = FALSE, 
+              smoothFactor = .2,
+              fillOpacity = .8, 
+              popup = alameda_popup, 
+              color = ~ mypalette(s.sf$lbs_chm_used))
+
+
+```
+```{r}
+qtm(s.sf, "lbs_chm_used")
+
+#mapview::mapView(s.sf)
+```
+
+```{r}
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+colors
+ 
+tm_shape(s.sf) + tm_polygons(col="lbs_chm_used", border.col="white", style = "fixed", palette = colors, breaks = c(0, 25, 50, 75, 100))
+```
+
+
+```{r}
+library(leaflet)
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
+alameda_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
+alameda_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+
+leaflet(alameda_projected) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addPolygons(stroke = FALSE, 
+              smoothFactor = .2,
+              fillOpacity = .8, 
+              popup = alameda_popup, 
+              color = ~ mypalette(s.sf$lbs_chm_used))
+```
+
+
+
+
+
+
+
+

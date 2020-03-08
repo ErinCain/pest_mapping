@@ -1,0 +1,89 @@
+---
+title: "long_form_combined"
+author: "Erin Cain"
+date: "3/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Butte
+```{r}
+date_applications <-udc17_01
+#date_applications <- date_applications[1:10,]
+
+```
+```{r}
+date_applications <- date_applications %>% 
+  select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
+                                  township, tship_dir,
+                                  range, range_dir,
+                                  section) %>% 
+  na.omit()
+
+date_applications$county_cd <- sprintf("%02d",
+                                       as.numeric(date_applications$county_cd))
+date_applications$township <- sprintf("%02d",
+                                      as.numeric(date_applications$township))
+date_applications$range <- sprintf("%02d",
+                                   as.numeric(date_applications$range))
+
+#date_applications$CO_MTR = paste(date_applications$county_cd,date_applications$base_ln_mer,
+#                                  date_applications$township, date_applications$tship_dir,
+#                                  date_applications$range, date_applications$range_dir,
+#                                  date_applications$section, sep="")
+
+date_applications$CO_MTR = paste(date_applications$county_cd, date_applications$base_ln_mer,
+                                  date_applications$township, date_applications$tship_dir,
+                                  date_applications$range, date_applications$range_dir, sep="")
+#date_applications$CO_MTR <- as.numeric(date_applications$CO_MTR)
+
+date_applications %>% 
+  select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR)
+
+date_applications
+``` 
+
+
+Glenn
+```{r}
+
+```
+
+Lake
+```{r}
+
+```
+
+Plumas
+```{r}
+
+```
+
+Shasta
+```{r}
+
+```
+
+Sutter
+```{r}
+
+```
+
+Tehama
+```{r}
+
+```
+
+Yolo
+```{r}
+
+```
+
+Yuba
+```{r}
+
+```
+

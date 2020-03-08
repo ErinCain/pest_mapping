@@ -1,0 +1,119 @@
+---
+title: "Alpine"
+author: "Erin Cain"
+date: "2/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(sp)
+library(ggplot2)
+library(tmap)
+library(tmaptools)
+library(readtext)
+library(tidyverse)
+library(dplyr)
+library(rgdal)
+library(data.table)
+library(maptools)
+```
+
+```{r}
+setwd("~/Documents/pest_mapping/mapping_practice ")
+udc17_02 <- read_csv("data/pest_data/udc17_02.txt")
+alpine_pest <-udc17_02
+alpine_pest
+
+```
+
+```{r}
+
+unique(alpine_pest$chem_code)
+alpine_pest <- alpine_pest %>% select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
+         township, tship_dir,range, range_dir,section) %>% na.omit()
+alpine_pest
+
+
+```
+
+
+```{r}
+alpine_pest$county_cd <- sprintf("%02d", as.numeric(alpine_pest$county_cd))
+alpine_pest$township <- sprintf("%02d", as.numeric(alpine_pest$township))
+alpine_pest$range <- sprintf("%02d", as.numeric(alpine_pest$range))
+
+#date_applications$CO_MTR = paste(date_applications$county_cd,date_applications$base_ln_mer,
+#                                  date_applications$township, date_applications$tship_dir,
+#                                  date_applications$range, date_applications$range_dir,
+#                                  date_applications$section, sep="")
+
+alpine_pest$CO_MTR = paste(alpine_pest$county_cd, alpine_pest$base_ln_mer,
+                                 alpine_pest$township, alpine_pest$tship_dir,
+                                 alpine_pest$range, alpine_pest$range_dir, sep="")
+#date_applications$CO_MTR <- as.numeric(date_applications$CO_MTR)
+
+alpine_pest %>% 
+  select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR)
+
+alpine_twnships <- 'data/shape_files/mtr_02_nad83.shp'
+alpine_twnships <- read_shape(file=alpine_twnships, as.sf = TRUE)
+
+merged_alpine <- full_join(alpine_twnships, alpine_pest, by='CO_MTR')
+alpine <- as.data.frame.matrix(merged_alpine) 
+
+```
+```{r}
+s.sf <- merged_alpine
+
+library(leaflet)
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
+alpine_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
+alpine_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+
+leaflet(alpine_projected) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addPolygons(stroke = FALSE, 
+              smoothFactor = .2,
+              fillOpacity = .8, 
+              popup = alpine_popup, 
+              color = ~ mypalette(s.sf$lbs_chm_used))
+```
+```{r}
+colnames(merged_alpine)[3:4] = c("MTR", "MTR_ID")
+colnames(merged_alameda)[3:4] = c("MTR", "MTR_ID")
+
+all_counties <-rbind(merged_alpine, merged_alameda)
+all_counties
+```
+
+
+```{r}
+
+s.sf <- all_counties
+
+library(leaflet)
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
+alpine_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
+all_count <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+
+leaflet(all_count) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addPolygons(stroke = FALSE, 
+              smoothFactor = .2,
+              fillOpacity = .8, 
+              popup = alpine_popup, 
+              color = ~ mypalette(s.sf$lbs_chm_used))
+
+```
+
+
+
+
+
+

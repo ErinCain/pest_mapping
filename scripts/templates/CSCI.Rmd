@@ -1,0 +1,61 @@
+---
+title: "CSCI_SCORES"
+author: "Erin Cain"
+date: "2/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(leaflet)
+library(ion)
+#colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+#mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
+#alameda_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
+#alameda_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+
+#leaflet(alameda_projected) %>%
+ #addProviderTiles("CartoDB.Positron" ) %>%
+ #addPolygons(stroke = FALSE, 
+#             smoothFactor = .2,
+#              fillOpacity = .8, 
+#              popup = alameda_popup, 
+#              color = ~ mypalette(s.sf$lbs_chm_used))
+
+s.sf <- csci_scored_sites_tbl
+csci_scored_sites_tbl
+
+getColor <- function(csci_scored_sites_tbl) {
+  sapply(csci_scored_sites_tbl$CSCI, function(CSCI) {
+  if(CSCI <= 1) {
+    "green"
+  } else if(CSCI <= .75) {
+    "orange"
+  } else {
+    "red"
+  } })
+}
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = getColor(csci_scored_sites_tbl)
+)
+
+leaflet(s.sf) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addMarkers(~LONGITUDE, ~LATITUDE, icon = icons, label = ~as.character(CSCI))
+
+
+```
+
+
+
+
+
+
