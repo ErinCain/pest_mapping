@@ -7,6 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(echo = TRUE,
+                      root.dir = "/Users/ErinCain/Documents/pest_mapping/")
 library(sf)
 library(sp)
 library(readtext)
@@ -14,20 +16,17 @@ library(tidyverse)
 library(dplyr)
 library(tidyverse)
 library(readr)
-
-
-#setwd("~/ErinCain/pest_mapping/mapping_practice")
 ```
 
 
 ```{r}
-counties <- c("udc17_04", "udc17_45", "udc17_52", "udc17_11", "udc17_32", "udc17_58", "udc17_51", "udc17_17", "udc17_57")
 
 create_dataframe <- function(file_1, file_2) {
-  pest_data <- read_csv(file = file_1)
+  pest_data <- read.csv(file = file_1)
   pest_data <- pest_data %>% 
     select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
-           township, tship_dir, range, range_dir, section) %>% 
+           township, tship_dir, range, range_dir, section,
+           CO_MTR = comtrs) %>% 
     na.omit()
 
   #pest_data$county_cd <- sprintf("%02d", as.numeric(pest_data$county_cd))
@@ -35,49 +34,75 @@ create_dataframe <- function(file_1, file_2) {
   #pest_data$range <- sprintf("%02d", as.numeric(pest_data$range))
 
 
-  pest_data$CO_MTR = paste(pest_data$county_cd, pest_data$base_ln_mer,
-                                  pest_data$township, pest_data$tship_dir,
-                                  pest_data$range, pest_data$range_dir, sep="")
+  #pest_data$CO_MTR = paste(pest_data$county_cd, pest_data$base_ln_mer,
+  #                                pest_data$township, pest_data$tship_dir,
+  #                                as.character(pest_data$range), pest_data$range_dir, sep="")
 
-  pest_data %>% 
-    select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR) 
-  #file_2 <- paste0("./", file_2)
-  print(file_2)
+  
 
-  twnships <- st_read(file = file_2)
-  s.sf <- twnships
-  par(mar=c(0,0,0,0))
+  townships <- st_read(dsn = file_2, quiet = T)
   
-  merged <- full_join(alameda_twnships, date_applications, by='CO_MTR')
-  s.sf <- merged
-  
+  merged <- full_join(townships, pest_data, by='CO_MTR')
+  colnames(merged)[3:4] <- c("TownshipMTR", "MTR_ID")
+  return(merged)
 }
-create_dataframe('pur2017/udc17_04.txt', "Butte_townships/mtr_04 _nad83.shp")
+#file_1 = 'data/pur2017/udc17_04.txt'
+#file_2 = "data/townships/Butte_townships/mtr_04_nad83.shp"
+
+#create_dataframe('pur2017/udc17_04.txt', "townships/Butte_townships/mtr_04_nad83.shp")
 ```
 
 ```{r}
-shapes_list <-c('data/pest_data/Archive/udc17_04.txt', 'data/pest_data/Archive/udc17_11.txt',
-                'data/pest_data/Archive/udc17_17.txt', 'data/pest_data/Archive/udc17_32.txt',
-                'data/pest_data/Archive/udc17_45.txt', 'data/pest_data/Archive/udc17_51.txt',
-                'data/pest_data/Archive/udc17_52.txt','data/pest_data/Archive/udc17_57.txt',
-                'data/pest_data/Archive/udc17_58.txt')
 
-pest_list <-c('data/shape_files/Butte_townships/mtr_04_nad83.shp', 'data/shape_files/Glenn_townships/mtr_11_nad83.shp',
-              'data/shape_files/Lake_townships/mtr_17_nad83.shp', 'data/shape_files/Sacramento_townships/mtr_32_nad83.shp',
-              'data/shape_files/Shasta_townships/mtr_45_nad83.shp','data/shape_files/Sutter_townships/mtr_51_nad83.shp',
-              'data/shape_files/Tehama_townships/mtr_52_nad83.shp','data/shape_files/Yolo_townships/mtr_57_nad83.shp',
-              'data/shape_files/Yuba_townships/mtr_58_nad83.shp')
+shapes_list <-c('data/pur2017/udc17_04.txt', 'data/pur2017/udc17_11.txt',
+                'data/pur2017/udc17_17.txt', 'data/pur2017/udc17_32.txt',
+                'data/pur2017/udc17_45.txt', 'data/pur2017/udc17_51.txt',
+                'data/pur2017/udc17_52.txt', 'data/pur2017/udc17_57.txt',
+                'data/pur2017/udc17_58.txt')
+
+pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
+              'data/townships/Glenn_townships/mtr_11_nad83.shp',
+              'data/townships/Lake_townships/mtr_17_nad83.shp',
+              'data/townships/Plumas_townships/mtr_32_nad83.shp',
+              'data/townships/Shasta_townships/mtr_45_nad83.shp',
+              'data/townships/Sutter_townships/mtr_51_nad83.shp',
+              'data/townships/Tehama_townships/mtr_52_nad83.shp',
+              'data/townships/Yolo_townships/mtr_57_nad83.shp',
+              'data/townships/Yuba_townships/mtr_58_nad83.shp')
 
 
-mapply(create_dataframe, shapes_list, pest_list)
+list_tables <- mapply(create_dataframe, shapes_list, pest_list, SIMPLIFY = FALSE)
+sac_counties <- do.call('rbind', list_tables)
+```
+
+```{r}
+length(unique(sac_counties$CO_MTR))
+length(unique(sac_counties$geometry))
+
+combined_comtr <- sac_counties %>%  
+  group_by(CO_MTR) %>% 
+  summarise(lbs_applied_total = sum(lbs_chm_used, na.rm = T))
 ```
 
 
 ```{r}
-read_csv("pur2017/udc17_04.txt")
+library(leaflet)
+s.sf <- combined_comtr
+colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
+mypalette <- colorBin(palette = colors, domain = s.sf$lbs_applied_total)
+popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_applied_total)
+combined_comtr_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
 
-butte_twn <- st_read("Butte_townships/mtr_04 _nad83.shp")
+leaflet(combined_comtr_projected) %>%
+  addProviderTiles("CartoDB.Positron" ) %>%
+  addPolygons(stroke = FALSE, 
+              smoothFactor = .2,
+              fillOpacity = .8, 
+              popup = popup, 
+              color = ~ mypalette(s.sf$lbs_applied_total))
 ```
+
+
 
 
 
