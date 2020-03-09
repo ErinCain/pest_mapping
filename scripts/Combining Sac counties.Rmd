@@ -27,7 +27,8 @@ create_dataframe <- function(file_1, file_2) {
     select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
            township, tship_dir, range, range_dir, section,
            CO_MTR = comtrs) %>% 
-    na.omit()
+    na.omit() %>%
+    mutate(CO_MTR = substr(CO_MTR, start = 1, stop = 9))
 
   #pest_data$county_cd <- sprintf("%02d", as.numeric(pest_data$county_cd))
   #pest_data$township <- sprintf("%02d", as.numeric(pest_data$township))
@@ -58,7 +59,7 @@ shapes_list <-c('data/pur2017/udc17_04.txt', 'data/pur2017/udc17_11.txt',
                 'data/pur2017/udc17_17.txt', 'data/pur2017/udc17_32.txt',
                 'data/pur2017/udc17_45.txt', 'data/pur2017/udc17_51.txt',
                 'data/pur2017/udc17_52.txt', 'data/pur2017/udc17_57.txt',
-                'data/pur2017/udc17_58.txt')
+                'data/pur2017/udc17_58.txt', 'data/pur2017/udc17_06.txt')
 
 pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
               'data/townships/Glenn_townships/mtr_11_nad83.shp',
@@ -68,7 +69,8 @@ pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
               'data/townships/Sutter_townships/mtr_51_nad83.shp',
               'data/townships/Tehama_townships/mtr_52_nad83.shp',
               'data/townships/Yolo_townships/mtr_57_nad83.shp',
-              'data/townships/Yuba_townships/mtr_58_nad83.shp')
+              'data/townships/Yuba_townships/mtr_58_nad83.shp',
+              'data/townships/Colusa_townships/mtr_06_nad83.shp')
 
 
 list_tables <- mapply(create_dataframe, shapes_list, pest_list, SIMPLIFY = FALSE)
@@ -93,13 +95,50 @@ mypalette <- colorBin(palette = colors, domain = s.sf$lbs_applied_total)
 popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_applied_total)
 combined_comtr_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
 
+bins <- c(0, 100, 500, 1000, 5000, 10000, 100000, 400000, Inf)
+pal <- colorBin("YlOrRd", domain = s.sf$lbs_applied_total, bins = bins)
+labels <- sprintf("Township Label <strong>%s</strong><br/>%g lbs / township",
+                  s.sf$CO_MTR, s.sf$lbs_applied_total) %>% 
+  lapply(htmltools::HTML)
+#labels <- paste0("<strong> Township </strong>", 
+#                      s.sf$CO_MTR, 
+#                      "<br><strong> Lbs of chem applied 2017: </strong>", 
+#                      s.sf$lbs_applied_total)
+
+
 leaflet(combined_comtr_projected) %>%
-  addProviderTiles("CartoDB.Positron" ) %>%
-  addPolygons(stroke = FALSE, 
-              smoothFactor = .2,
-              fillOpacity = .8, 
-              popup = popup, 
-              color = ~ mypalette(s.sf$lbs_applied_total))
+  addProviderTiles("CartoDB.Positron" ) %>% addPolygons(
+  fillColor = ~pal(lbs_applied_total),
+  weight = .05,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.5,
+  highlight = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  label = labels,
+  labelOptions = labelOptions(
+    style = list("font-weight" = "normal", padding = "3px 8px"),
+    textsize = "15px",
+    direction = "auto")) %>% 
+  addLegend(pal = pal, values = ~lbs_applied_total, opacity = 0.7, title = "Total lbs Chem Applied",
+  position = "bottomright")
+
+
+
+
+
+
+
+#  addPolygons(stroke = FALSE, 
+#              smoothFactor = .2,
+#              fillOpacity = .8, 
+#              popup = popup, 
+#              color = ~ mypalette(s.sf$lbs_applied_total))
 ```
 
 

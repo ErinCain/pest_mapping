@@ -5,55 +5,50 @@ r_colors <- rgb(t(col2rgb(colors()) / 255))
 names(r_colors) <- colors()
 
 ui <- fluidPage(
-  leafletOutput("mymap")
+  leafletOutput("mymap"),
+  p(),
+  actionButton("recalc", "New points")
 )
 
 server <- function(input, output, session) {
-  date_applications <-udc17_01
   
-  date_applications <- as.data.frame.matrix(date_applications) 
-  unique(date_applications$chem_code)
-  date_applications <- date_applications %>% 
-    select(use_no, chem_code, lbs_chm_used, applic_dt, county_cd, base_ln_mer,
-           township, tship_dir,
-           range, range_dir,
-           section) %>% 
-    na.omit()
   
-  date_applications$county_cd <- sprintf("%02d", as.numeric(date_applications$county_cd))
-  date_applications$township <- sprintf("%02d", as.numeric(date_applications$township))
-  date_applications$range <- sprintf("%02d", as.numeric(date_applications$range))
-  
-  date_applications$CO_MTR = paste(date_applications$county_cd, date_applications$base_ln_mer,
-                                   date_applications$township, date_applications$tship_dir,
-                                   date_applications$range, date_applications$range_dir, sep="")
-  
-  date_applications %>% 
-    select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR)
-  
-  alameda_twnships <- "/Users/ErinCain/Downloads/Alameda_townships/mtr_01_nad83.shp"
-  alameda_twnships <- read_shape(file=alameda_twnships, as.sf = TRUE)
-  
-  merged_alameda <- full_join(alameda_twnships, date_applications, by='CO_MTR')
-  merged_alameda
-  
-  s.sf <- merged_alameda
-  
+  points <- eventReactive(input$recalc, { cbind(rnorm(40) * 2 + 13, 
+                                                rnorm(40) + 48)}, ignoreNULL = FALSE)
   library(leaflet)
+  s.sf <- combined_comtr
   colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
-  mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
-  alameda_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
-  alameda_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
-  output$mymap <- renderLeaflet({
-    leaflet(alameda_projected) %>%
-      addProviderTiles("CartoDB.Positron" ) %>%
-      addPolygons(stroke = FALSE, 
-                  smoothFactor = .2,
-                  fillOpacity = .8, 
-                  popup = alameda_popup, 
-                  color = ~ mypalette(s.sf$lbs_chm_used))
-  })
-}
+  mypalette <- colorBin(palette = colors, domain = s.sf$lbs_applied_total)
+  popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_applied_total)
+  combined_comtr_projected <- sf::st_transform(s.sf, '+proj=longlat +datum=WGS84')
+  
+  bins <- c(0, 100, 500, 1000, 5000, 10000, 100000, 400000, Inf)
+  pal <- colorBin("YlOrRd", domain = s.sf$lbs_applied_total, bins = bins)
+  labels <- sprintf("Township Label <strong>%s</strong><br/>%g lbs / township",
+                    s.sf$CO_MTR, s.sf$lbs_applied_total) %>% 
+    lapply(htmltools::HTML)
+  
+  output$mymap <- leaflet(combined_comtr_projected) %>%
+    addProviderTiles("CartoDB.Positron" ) %>% addPolygons(
+      fillColor = ~pal(lbs_applied_total),
+      weight = .05,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.5,
+      highlight = highlightOptions(
+        weight = 5,
+        color = "#666",
+        dashArray = "",
+        fillOpacity = 0.7,
+        bringToFront = TRUE),
+      label = labels,
+      labelOptions = labelOptions(
+        style = list("font-weight" = "normal", padding = "3px 8px"),
+        textsize = "15px",
+        direction = "auto")) %>% 
+    addLegend(pal = pal, values = ~lbs_applied_total, opacity = 0.7, title = "Total lbs Chem Applied",
+              position = "bottomright")
+  }
 
 shinyApp(ui, server)
-
