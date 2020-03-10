@@ -12,9 +12,6 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  
-  points <- eventReactive(input$recalc, { cbind(rnorm(40) * 2 + 13, 
-                                                rnorm(40) + 48)}, ignoreNULL = FALSE)
   library(leaflet)
   s.sf <- combined_comtr
   colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
@@ -29,7 +26,8 @@ server <- function(input, output, session) {
     lapply(htmltools::HTML)
   
   output$mymap <- leaflet(combined_comtr_projected) %>%
-    addProviderTiles("CartoDB.Positron" ) %>% addPolygons(
+    addProviderTiles("CartoDB.Positron" ) %>% 
+    addPolygons(
       fillColor = ~pal(lbs_applied_total),
       weight = .05,
       opacity = 1,
