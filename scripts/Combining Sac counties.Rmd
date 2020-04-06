@@ -55,11 +55,25 @@ create_dataframe <- function(file_1, file_2) {
 
 ```{r}
 
-shapes_list <-c('data/pur2017/udc17_04.txt', 'data/pur2017/udc17_11.txt',
-                'data/pur2017/udc17_17.txt', 'data/pur2017/udc17_32.txt',
-                'data/pur2017/udc17_45.txt', 'data/pur2017/udc17_51.txt',
-                'data/pur2017/udc17_52.txt', 'data/pur2017/udc17_57.txt',
-                'data/pur2017/udc17_58.txt', 'data/pur2017/udc17_06.txt')
+shapes_list <-c('data/pur2017/udc17_04.txt', 
+                'data/pur2017/udc17_11.txt',
+                'data/pur2017/udc17_17.txt', 
+                'data/pur2017/udc17_32.txt',
+                'data/pur2017/udc17_45.txt', 
+                'data/pur2017/udc17_51.txt',
+                'data/pur2017/udc17_52.txt', 
+                'data/pur2017/udc17_57.txt',
+                'data/pur2017/udc17_58.txt', 
+                'data/pur2017/udc17_06.txt', 
+                'data/pur2017/udc17_39.txt', 
+                'data/pur2017/udc17_34.txt',
+                'data/pur2017/udc17_50.txt', 
+                'data/pur2017/udc17_24.txt',
+                'data/pur2017/udc17_20.txt', 
+                'data/pur2017/udc17_10.txt',
+                'data/pur2017/udc17_16.txt', 
+                'data/pur2017/udc17_54.txt')
+#                'data/pur2017/udc17_15.txt')
 
 pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
               'data/townships/Glenn_townships/mtr_11_nad83.shp',
@@ -70,12 +84,23 @@ pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
               'data/townships/Tehama_townships/mtr_52_nad83.shp',
               'data/townships/Yolo_townships/mtr_57_nad83.shp',
               'data/townships/Yuba_townships/mtr_58_nad83.shp',
-              'data/townships/Colusa_townships/mtr_06_nad83.shp')
+              'data/townships/Colusa_townships/mtr_06_nad83.shp',
+              'data/townships/San_Joaquin_townships/mtr_39_nad83.shp',
+              'data/townships/Sacramento_townships/mtr_34_nad83.shp',
+              'data/townships/Stanislaus_townships/mtr_50_nad83.shp',
+              'data/townships/Merced_townships/Merced_townships_r.shp',
+              'data/townships/Madera_townships/mtr_20_nad83.shp',
+              'data/townships/Fresno_townships/Fresno_townships_r.shp',
+              'data/townships/Kings_townships/mtr_16_nad83.shp',
+              'data/townships/Tulare_townships/mtr_54_nad83.shp')
+#              'data/townships/Kern_townships/Kern_townships_r.shp')
 
 
 list_tables <- mapply(create_dataframe, shapes_list, pest_list, SIMPLIFY = FALSE)
+
 sac_counties <- do.call('rbind', list_tables)
 ```
+
 
 ```{r}
 length(unique(sac_counties$CO_MTR))
@@ -89,6 +114,9 @@ combined_comtr <- sac_counties %>%
 
 ```{r}
 library(leaflet)
+library(dplyr)
+
+### Data prep for pesticide application data 
 s.sf <- combined_comtr
 colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
 mypalette <- colorBin(palette = colors, domain = s.sf$lbs_applied_total)
@@ -104,6 +132,28 @@ labels <- sprintf("Township Label <strong>%s</strong><br/>%g lbs / township",
 #                      s.sf$CO_MTR, 
 #                      "<br><strong> Lbs of chem applied 2017: </strong>", 
 #                      s.sf$lbs_applied_total)
+### Data prep for CSCI score map 
+csci_scored_sites_tbl_1_ <- 
+  read_excel("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/csci_scored_sites_tbl (1).xlsx")
+
+csci_scored_sites_tbl_1_ %>% 
+  transform(CSCI = as.numeric(csci_scored_sites_tbl_1_$CSCI)) 
+
+mutate(csci_scored_sites_tbl_1_, group = cut(CSCI, breaks = c(0, .5, .75, 1, Inf), labels = c("red", "orange","yellow", "green"))) -> csci_scored_sites_tbl_1_
+
+
+H20Icons <- iconList(red = makeIcon(
+  "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/RedDrop.png", 
+                                     iconWidth = 30, iconHeight = 30),
+                     orange = makeIcon(
+                       "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/yellowDrop.png",
+                                         iconWidth = 30, iconHeight = 30),
+                     orange = makeIcon(
+                       "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/orangeDrop.png",
+                                         iconWidth = 30, iconHeight = 30),
+                     green = makeIcon(
+                       "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/greenDrop.png", 
+                                        iconWidth = 30, iconHeight = 30))
 
 
 leaflet(combined_comtr_projected) %>%
@@ -113,7 +163,7 @@ leaflet(combined_comtr_projected) %>%
   opacity = 1,
   color = "white",
   dashArray = "3",
-  fillOpacity = 0.5,
+  fillOpacity = 0.7,
   highlight = highlightOptions(
     weight = 5,
     color = "#666",
@@ -126,20 +176,12 @@ leaflet(combined_comtr_projected) %>%
     textsize = "15px",
     direction = "auto")) %>% 
   addLegend(pal = pal, values = ~lbs_applied_total, opacity = 0.7, title = "Total lbs Chem Applied",
-  position = "bottomright")
-
-
-
-
-
-
-
-#  addPolygons(stroke = FALSE, 
-#              smoothFactor = .2,
-#              fillOpacity = .8, 
-#              popup = popup, 
-#              color = ~ mypalette(s.sf$lbs_applied_total))
+  position = "bottomright") %>%
+  addMarkers(data = csci_scored_sites_tbl_1_, clusterOptions = markerClusterOptions(), 
+             icon= ~H20Icons[group], 
+             label = ~as.character(CSCI))
 ```
+
 
 
 

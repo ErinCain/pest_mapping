@@ -12,7 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 
 library(leaflet)
-library(ion)
+library(dplyr)
+library(ICON)
+library(readxl)
 #colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
 #mypalette <- colorBin(palette = colors, domain = s.sf$lbs_chem_used)
 #alameda_popup <- paste0("Township:", s.sf$CO_MTR, "Pounds Chemicals Applied", s.sf$lbs_chm_used)
@@ -25,18 +27,20 @@ library(ion)
 #              fillOpacity = .8, 
 #              popup = alameda_popup, 
 #              color = ~ mypalette(s.sf$lbs_chm_used))
-
-s.sf <- csci_scored_sites_tbl
-csci_scored_sites_tbl
+#csci_scored_sites_tbl_1_ <- read_excel("Documents/pest_mapping/data/CSCI_scores/csci_scored_sites_tbl (1).xlsx")
+csci_scored_sites_tbl_1_ %>% 
+  transform(CSCI = as.numeric(csci_scored_sites_tbl_1_$CSCI)) 
+  
+mutate(csci_scored_sites_tbl_1_, group = cut(CSCI, breaks = c(0, .5, 1, Inf), labels = c("red", "orange", "green"))) -> csci_scored_sites_tbl_1_
 
 getColor <- function(csci_scored_sites_tbl) {
   sapply(csci_scored_sites_tbl$CSCI, function(CSCI) {
-  if(CSCI <= 1) {
-    "green"
-  } else if(CSCI <= .75) {
-    "orange"
+  if (CSCI <= .5) {
+  return("red")
+  } else if (CSCI <= .75) {
+  "orange"
   } else {
-    "red"
+  "green"
   } })
 }
 
@@ -44,12 +48,20 @@ icons <- awesomeIcons(
   icon = 'ios-close',
   iconColor = 'black',
   library = 'ion',
-  markerColor = getColor(csci_scored_sites_tbl)
+  markerColor = getColor(csci_scored_sites_tbl_1_)
 )
+H20Icons <- iconList(red = makeIcon("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/teardrop.png", 
+                                     iconWidth = 27, iconHeight =32),
+                     orange = makeIcon("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/water.png",
+                                         iconWidth = 27, iconHeight =32),
+                     green = makeIcon("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/water (1).png", 
+                                        iconWidth = 27, iconHeight =32))
 
-leaflet(s.sf) %>%
+
+leaflet(csci_scored_sites_tbl_1_) %>%
   addProviderTiles("CartoDB.Positron" ) %>%
-  addMarkers(~LONGITUDE, ~LATITUDE, icon = icons, label = ~as.character(CSCI))
+  addMarkers(clusterOptions = markerClusterOptions(), icon= ~H20Icons[group], label = ~as.character(csci_scored_sites_tbl_1_$CSCI))
+
 
 
 ```
