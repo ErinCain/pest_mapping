@@ -133,6 +133,7 @@ labels <- sprintf("Township Label <strong>%s</strong><br/>%g lbs / township",
 #                      "<br><strong> Lbs of chem applied 2017: </strong>", 
 #                      s.sf$lbs_applied_total)
 ### Data prep for CSCI score map 
+library(readxl)
 csci_scored_sites_tbl_1_ <- 
   read_excel("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/csci_scored_sites_tbl (1).xlsx")
 
