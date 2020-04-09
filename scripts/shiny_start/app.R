@@ -1,17 +1,19 @@
 library(shiny)
 library(leaflet)
 
-r_colors <- rgb(t(col2rgb(colors()) / 255))
-names(r_colors) <- colors()
-
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
+  
+  # Map output with map sizing 
   leafletOutput("map", width = "100%", height = "100%"),
+  
+  #Slider input for changing CSCI Scores 
   absolutePanel(top = 100, right = 10,
                 sliderInput("range", "CSCI Scores",  
                             sort(csci_scored_sites_tbl_1_$CSCI, decreasing = FALSE)[1], 
                             sort(csci_scored_sites_tbl_1_$CSCI, decreasing = TRUE)[1],
                             value = range(csci_scored_sites_tbl_1_$CSCI), step = 0.1)) 
+  #If I want to make slider for pesticide application 
   #  absolutePanel(top = 200, right = 10,
   #                sliderInput("range_pest", "Lbs Pesticide Applied",  
   #                            sort(combined_comtr_projected$lbs_applied_total, decreasing = FALSE)[1], 
@@ -34,8 +36,7 @@ server <- function(input, output, session) {
   bins <- c(0, 100, 500, 1000, 5000, 10000, 100000, 400000, Inf)
   pal <- colorBin("YlOrRd", domain = s.sf$lbs_applied_total, bins = bins)
   labels <- sprintf("Township Label <strong>%s</strong><br/>%g lbs / township",
-                    s.sf$CO_MTR, s.sf$lbs_applied_total) %>% 
-    lapply(htmltools::HTML)
+                    s.sf$CO_MTR, s.sf$lbs_applied_total) %>% lapply(htmltools::HTML)
 
   csci_scored_sites_tbl_1_ <- 
     read_excel("/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/csci_scored_sites_tbl (1).xlsx")
@@ -73,7 +74,7 @@ server <- function(input, output, session) {
     leaflet(combined_comtr_projected) %>% 
       #Base Group
       addProviderTiles("CartoDB.Positron", group = "Base Map" ) %>% 
-      #Pesticide Application 
+      #Pesticide Application Shapes
       addPolygons(
         fillColor = ~pal(lbs_applied_total),
         weight = .05,
@@ -89,7 +90,7 @@ server <- function(input, output, session) {
           bringToFront = TRUE),
         label = labels,
         group = 'Pesticide Application',
-        # Label For Hover 
+        # Label For Hover With Lbs information 
         labelOptions = labelOptions(
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
@@ -97,9 +98,10 @@ server <- function(input, output, session) {
       #Legend for TOTAL LBS APPLIED 
       addLegend(pal = pal, values = ~lbs_applied_total, opacity = 0.7, title = "Total lbs Chem Applied",
                 position = "bottomright") %>%
-      #CSCI Scores
+      #CSCI Scores - adds a marker for each csci site and gives the score. Makers are clustered in groups 
       addMarkers(data = csci_scored_sites_tbl_1_, clusterOptions = 
                    markerClusterOptions(freezeAtZoom = 500, 
+                                        #Custom ICON - NOT WORKING 
                                         iconCreateFunction = JS(" function(cluster) {
                                                                 return new L.DivIcon({
                                                                 html: '<div style=\"background-color:rgba(77,77,77,0.5)\"><span>' + cluster.getChildCount() + '</div><span>',
@@ -107,7 +109,8 @@ server <- function(input, output, session) {
                                                                 });}")), 
                  icon= ~H20Icons[group], label = ~as.character(CSCI), 
                  group = "California Stream Condition Index CSCI Scores") %>%
-      addMarkers(data = CEDEN_cite_id, label = ~as.character(total_tu), group = "CEDEN Sites") %>%
+      #Attempt to add markers of CEDEN sites...but not showing up
+      # addMarkers(data = CEDEN_cite_id, label = ~as.character(total_tu), group = "CEDEN Sites") %>%
       # Layers control
       addLayersControl(
         baseGroups = c("Base Map"),
@@ -121,29 +124,8 @@ server <- function(input, output, session) {
     leafletProxy("map") %>%
       clearMarkers() %>%
       clearMarkerClusters() %>%
-      addMarkers(data = filteredData(), icon= ~H20Icons[group], clusterOptions = markerClusterOptions(color = "blue"),
+      addMarkers(data = filteredData(), icon= ~H20Icons[group], clusterOptions = markerClusterOptions(),
                  label = ~as.character(CSCI))
   })
-  # Incremental changes to the map Preformed in the observer (app pounds)  
-  #  observeEvent(input$range_pest, {
-  #    leafletProxy("map") %>%
-  #      clearShapes() %>%
-  #      addPolygons(data = filteredPest(), 
-  #                  fillColor = ~pal(lbs_applied_total), 
-  #                  weight = .05, opacity = 1, color = "white", 
-  #                  dashArray = "3", 
-  #                  fillOpacity = 0.7, 
-  #                  highlight = highlightOptions(weight = 5, color = "#666", dashArray = "", 
-  #                                                                  fillOpacity = 0.7, bringToFront = TRUE), 
-  #                  label = labels, 
-  #                  group = 'Pesticide Application', labelOptions = labelOptions(style = 
-  #                                                                                list("font-weight" = "normal", 
-  #                                                                                     padding = "3px 8px"), 
-  #                                                                              textsize = "15px", 
-  #                                                                             direction = "auto")) %>% 
-  #Legend for TOTAL LBS APPLIED 
-  #    addLegend(pal = pal, values = ~lbs_applied_total, opacity = 0.7, title = "Total lbs Chem Applied",
-  #              position = "bottomright")
-  #  })
   }
 shinyApp(ui, server)
