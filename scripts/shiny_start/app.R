@@ -1,5 +1,14 @@
 library(shiny)
 library(leaflet)
+for (pkg in c("leaflet", "rgdal", "dataRetrieval")) {
+  if (!pkg %in% rownames(utils::installed.packages()))
+    utils::install.packages(pkg, repos = "https://cloud.r-project.org/")
+}
+grp <- c("USGS Topo", "USGS Imagery Only", "USGS Imagery Topo", "USGS Shaded Relief", "Hydrography")
+att <- paste0("<a href='https://www.usgs.gov/'>",
+              "U.S. Geological Survey</a> | ",
+              "<a href='https://www.usgs.gov/laws/policies_notices.html'>",
+              "Policies</a>")
 
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
@@ -8,7 +17,7 @@ ui <- bootstrapPage(
   leafletOutput("map", width = "100%", height = "100%"),
   
   #Slider input for changing CSCI Scores 
-  absolutePanel(top = 100, right = 10,
+  absolutePanel(top = 150, right = 10,
                 sliderInput("range", "CSCI Scores",  
                             sort(csci_scored_sites_tbl_1_$CSCI, decreasing = FALSE)[1], 
                             sort(csci_scored_sites_tbl_1_$CSCI, decreasing = TRUE)[1],
@@ -25,7 +34,10 @@ server <- function(input, output, session) {
   
   library(leaflet)
   library(dplyr)
-  
+  ## USGS TOPO DATA 
+  GetURL <- function(service, host = "basemap.nationalmap.gov") { 
+    sprintf("https://%s/arcgis/services/%s/MapServer/WmsServer", host, service)
+  }
   ### Data prep for pesticide application data 
   s.sf <- combined_comtr
   colors <- c('#fed98e', '#fe9929', '#d95f0e', '#993404')
@@ -46,7 +58,7 @@ server <- function(input, output, session) {
   
   mutate(csci_scored_sites_tbl_1_, group = cut(CSCI, breaks = c(0, .5, .75, 1, Inf), labels = c("red", "orange","yellow", "green"))) -> csci_scored_sites_tbl_1_
   
-  
+  # H20 ICONS 
   H20Icons <- iconList(red = makeIcon(
     "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/RedDrop.png", 
     iconWidth = 30, iconHeight = 30),
@@ -59,7 +71,6 @@ server <- function(input, output, session) {
     green = makeIcon(
       "/Users/ErinCain/Documents/pest_mapping/data/CSCI_scores/greenDrop.png", 
       iconWidth = 30, iconHeight = 30))
-
   
   filteredData <- reactive({
     csci_scored_sites_tbl_1_[csci_scored_sites_tbl_1_$CSCI >= input$range[1] & 
@@ -74,6 +85,11 @@ server <- function(input, output, session) {
     leaflet(combined_comtr_projected) %>% 
       #Base Group
       addProviderTiles("CartoDB.Positron", group = "Base Map" ) %>% 
+      # USGS Map
+      addWMSTiles(GetURL("USGSTopo"), group = "USGS Topo", layers ="0") %>%
+      # Hydro Map added
+      addWMSTiles(GetURL("USGSHydroCached"), group = "Hydrography", 
+                  options = WMSTileOptions(format = "image/png", transparent = TRUE), layers = "0") %>%
       #Pesticide Application Shapes
       addPolygons(
         fillColor = ~pal(lbs_applied_total),
@@ -100,13 +116,7 @@ server <- function(input, output, session) {
                 position = "bottomright") %>%
       #CSCI Scores - adds a marker for each csci site and gives the score. Makers are clustered in groups 
       addMarkers(data = csci_scored_sites_tbl_1_, clusterOptions = 
-                   markerClusterOptions(freezeAtZoom = 500, 
-                                        #Custom ICON - NOT WORKING 
-                                        iconCreateFunction = JS(" function(cluster) {
-                                                                return new L.DivIcon({
-                                                                html: '<div style=\"background-color:rgba(77,77,77,0.5)\"><span>' + cluster.getChildCount() + '</div><span>',
-                                                                className: 'marker-cluster'
-                                                                });}")), 
+                   markerClusterOptions(), 
                  icon= ~H20Icons[group], label = ~as.character(CSCI), 
                  group = "California Stream Condition Index CSCI Scores") %>%
       #Attempt to add markers of CEDEN sites...but not showing up
@@ -114,7 +124,8 @@ server <- function(input, output, session) {
       # Layers control
       addLayersControl(
         baseGroups = c("Base Map"),
-        overlayGroups = c("Pesticide Application", "California Stream Condition Index CSCI Scores", "CEDEN Sites"),
+        overlayGroups = c("Pesticide Application", 
+                          "CEDEN Sites", "USGS Topo", "Hydrography"),
         options = layersControlOptions(collapsed = FALSE) 
       )
     })
