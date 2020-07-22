@@ -15,7 +15,7 @@ library(readxl)
 grp <- c("USGS Topo", "USGS Imagery Only", "USGS Imagery Topo", "USGS Shaded Relief", "Hydrography")
 att <- paste0("<a href='https://www.usgs.gov/'>",
               "U.S. Geological Survey</a> | ",
-              "<a href='https://www.usgs.gov/laws/policies_notices.html'>",
+              "<a href='https://www.usgs.gov/laws/policies_notices.html'>",_start
               "Policies</a>")
 # Define csci scores table from excel
 csci_scored_sites_tbl_1_ <- 
