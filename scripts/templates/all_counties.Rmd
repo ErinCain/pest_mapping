@@ -23,8 +23,9 @@ library(maptools)
 ```
 
 ```{r}
-setwd("~/Documents/pest_mapping/mapping_practice ")
-udc17_02 <- read_csv("data/pest_data/udc17_02.txt")
+
+setwd("~/Documents/pest_mapping")
+udc17_02 <- read_csv("data/pur2017/udc17_02.txt")
 alpine_pest <-udc17_02
 alpine_pest
 
@@ -59,7 +60,7 @@ alpine_pest$CO_MTR = paste(alpine_pest$county_cd, alpine_pest$base_ln_mer,
 alpine_pest %>% 
   select(use_no, chem_code, lbs_chm_used, applic_dt, CO_MTR)
 
-alpine_twnships <- 'data/shape_files/mtr_02_nad83.shp'
+alpine_twnships <- 'data/townships/mtr_02_nad83.shp'
 alpine_twnships <- read_shape(file=alpine_twnships, as.sf = TRUE)
 
 merged_alpine <- full_join(alpine_twnships, alpine_pest, by='CO_MTR')
