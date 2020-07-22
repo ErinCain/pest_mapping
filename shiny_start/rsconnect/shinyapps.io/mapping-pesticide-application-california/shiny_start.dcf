@@ -1,0 +1,12 @@
+name: shiny_start
+title:
+username:
+account: mapping-pesticide-application-california
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2241654
+bundleId: 3422538
+url: https://mapping-pesticide-application-california.shinyapps.io/shiny_start/
+when: 1595441768.54738
+asMultiple: FALSE
+asStatic: FALSE

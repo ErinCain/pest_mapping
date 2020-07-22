@@ -30,16 +30,6 @@ create_dataframe <- function(file_1, file_2) {
     na.omit() %>%
     mutate(CO_MTR = substr(CO_MTR, start = 1, stop = 9))
 
-  #pest_data$county_cd <- sprintf("%02d", as.numeric(pest_data$county_cd))
-  #pest_data$township <- sprintf("%02d", as.numeric(pest_data$township))
-  #pest_data$range <- sprintf("%02d", as.numeric(pest_data$range))
-
-
-  #pest_data$CO_MTR = paste(pest_data$county_cd, pest_data$base_ln_mer,
-  #                                pest_data$township, pest_data$tship_dir,
-  #                                as.character(pest_data$range), pest_data$range_dir, sep="")
-
-  
 
   townships <- st_read(dsn = file_2, quiet = T)
   
@@ -54,6 +44,8 @@ create_dataframe <- function(file_1, file_2) {
 ```
 
 ```{r}
+
+setwd("/Users/ErinCain/Documents/pest_mapping/")
 
 shapes_list <-c('data/pur2017/udc17_04.txt', 
                 'data/pur2017/udc17_11.txt',
@@ -95,8 +87,9 @@ pest_list <-c('data/townships/Butte_townships/mtr_04_nad83.shp',
               'data/townships/Tulare_townships/mtr_54_nad83.shp')
 #              'data/townships/Kern_townships/Kern_townships_r.shp')
 
-
 list_tables <- mapply(create_dataframe, shapes_list, pest_list, SIMPLIFY = FALSE)
+
+create_dataframe('data/pur2017/udc17_04.txt', 'data/townships/Butte_townships/mtr_04_nad83.shp')
 
 sac_counties <- do.call('rbind', list_tables)
 ```
