@@ -1,0 +1,41 @@
+---
+title: "about"
+author: "Erin Cain"
+date: "7/23/2020"
+output: html_document
+runtime: shiny
+header-includes:
+    - \usepackage{sectsty}
+    - \allsectionsfont{\color{cyan}}
+---
+
+<style>
+  body {background-color:lightblue}
+</style>
+
+<center>
+### About 
+
+This interactive map was created as a tool to look at pesticide application and aquatic ecosystem health in California. 
+
+### Data 
+
+This map uses the most recent Pesticide data from the California Pesticide Use Reporting Database (PUR 2017). PUR is the most comprehensive database of pesticide use in California with data starting in 1970 through present day. This data resource reports pesticide use by townships and is separated into different series of records for every year and every county. This map has shows pounds of pesticides applied in each township in the central valley for all of 2017.
+
+Data can be found [here](https://calpip.cdpr.ca.gov/main.cfm). 
+
+### CSCI 
+
+CSCI stands for the California Stream Condition Index. 
+
+The California Stream Condition Index is a biological index that measures aquatic ecosystem health. The 
+California Stream Condition Index (CSCI) communicates how similar actual biological communities are to the expected macroinvertebrate community without impairment. CSCI scores are calculated using holistic factors of ecosystem health. Macroinvertebrate samples from the stream, water quality samples, statewide geography, and climate factors are all combined to make up one overall score representing ecosystem health. These combined factors give a score between 0-1.4 that indicates how close the ecosystem is to the expected ecosystem at the site studied. A score of 1 indicates that the ecosystem health is normal in that area. Any score above one is better than expected ecosystem health for a stream of that type. Scores below one show diminished ecosystem health. 
+
+The interactive map allows the user to select a range of CSCI scores by moving the slider bar to different values. This will filter out other values and only show selected values on the map. Using this feature one can determine areas of low, medium, or high ecosystem health. 
+
+More information on CSCI scores can be found [here](https://www.waterboards.ca.gov/water_issues/programs/swamp/bioassessment/docs/csci_tech_memo.pdf).
+
+</center>
+
+
+
